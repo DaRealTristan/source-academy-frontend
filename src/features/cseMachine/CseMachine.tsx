@@ -4,7 +4,12 @@ import React from 'react';
 
 import { Layout } from './CseMachineLayout';
 import { EnvTree } from './CseMachineTypes';
-import { deepCopyTree, getEnvId } from './CseMachineUtils';
+import { deepCopyTree, getEnvId, isInstr } from './CseMachineUtils';
+import {
+  Instr,
+  InstrType,
+} from 'js-slang/dist/cse-machine/types';
+import { is } from 'immer/dist/internal.js';
 
 type SetVis = (vis: React.ReactNode) => void;
 type SetEditorHighlightedLines = (segments: [number, number][]) => void;
@@ -20,6 +25,9 @@ export default class CseMachine {
   private static setIsStepLimitExceeded: SetisStepLimitExceeded;
   private static printableMode: boolean = false;
   private static controlStash: boolean = false; // TODO: discuss if the default should be true
+  private static pairCreationMode: boolean = true;
+  private static isPairCreation:boolean = false;
+  private static first: boolean = true;
   private static stackTruncated: boolean = false;
   private static environmentTree: EnvTree | undefined;
   private static currentEnvId: string;
@@ -33,6 +41,9 @@ export default class CseMachine {
   }
   public static toggleStackTruncated(): void {
     CseMachine.stackTruncated = !CseMachine.stackTruncated;
+  }
+  public static toggleCreationmode(): void {
+    CseMachine.pairCreationMode = !CseMachine.pairCreationMode;
   }
   public static getCurrentEnvId(): string {
     return CseMachine.currentEnvId;
@@ -80,7 +91,42 @@ export default class CseMachine {
       throw new Error('CSE machine not initialized');
     CseMachine.control = context.runtime.control;
     CseMachine.stash = context.runtime.stash;
+if (CseMachine.pairCreationMode && !CseMachine.first) {
+        let pairCreated = CseMachine.isPairCreation;
+        // 1. Get the next item
+        const nextControlItem = context.runtime.control.peek();
 
+        // 2. Define what counts as a "draw-able" step
+        // const isProgramFinished = context.runtime.control.isEmpty();
+          CseMachine.isPairCreation = false;
+        if (nextControlItem && isInstr(nextControlItem)) {
+            const srcNode = nextControlItem.srcNode as any;
+             
+             // Check if it's a function call to 'pair' or 'cons'
+             if (srcNode.callee && srcNode.callee.type === 'Identifier') {
+                 const name = srcNode.callee.name;
+                 console.log(name);
+                 if (name === 'pair' || name === 'cons') {
+                     CseMachine.isPairCreation = true;
+                }
+        }
+      }
+
+        // 3. Filter: Only draw if it's a Pair Creation OR the program is done.
+        if (pairCreated) {
+              Layout.setContext(
+              context.runtime.environmentTree as EnvTree,
+              context.runtime.control,
+              context.runtime.stash,
+              context.chapter
+            );
+            this.setVis(Layout.draw());
+           return; 
+        } else {
+          return;
+        }
+    }
+  
     Layout.setContext(
       context.runtime.environmentTree as EnvTree,
       context.runtime.control,
@@ -88,6 +134,7 @@ export default class CseMachine {
       context.chapter
     );
     this.setVis(Layout.draw());
+    CseMachine.first = false;
     this.setIsStepLimitExceeded(context.runtime.control.isEmpty());
     Layout.updateDimensions(Layout.visibleWidth, Layout.visibleHeight);
   }
