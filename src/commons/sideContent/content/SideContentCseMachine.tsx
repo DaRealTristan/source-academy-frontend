@@ -276,7 +276,7 @@ class SideContentCseMachineBase extends React.Component<CseMachineProps, State> 
                         CseMachine.redraw();
                       }
                     }}
-                    icon="minimize"
+                    icon="array"
                     disabled={!this.state.visualization}
                   >
                     <Checkbox
