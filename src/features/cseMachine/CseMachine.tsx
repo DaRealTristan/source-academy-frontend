@@ -5,11 +5,6 @@ import React from 'react';
 import { Layout } from './CseMachineLayout';
 import { EnvTree } from './CseMachineTypes';
 import { deepCopyTree, getEnvId, isInstr } from './CseMachineUtils';
-import {
-  Instr,
-  InstrType,
-} from 'js-slang/dist/cse-machine/types';
-import { is } from 'immer/dist/internal.js';
 
 type SetVis = (vis: React.ReactNode) => void;
 type SetEditorHighlightedLines = (segments: [number, number][]) => void;
@@ -42,7 +37,7 @@ export default class CseMachine {
   public static toggleStackTruncated(): void {
     CseMachine.stackTruncated = !CseMachine.stackTruncated;
   }
-  public static toggleCreationmode(): void {
+  public static togglePairCreationMode(): void {
     CseMachine.pairCreationMode = !CseMachine.pairCreationMode;
   }
   public static getCurrentEnvId(): string {
@@ -56,6 +51,10 @@ export default class CseMachine {
   }
   public static getStackTruncated(): boolean {
     return CseMachine.stackTruncated;
+  }
+
+  public static getPairCreationMode(): boolean {
+    return CseMachine.pairCreationMode;
   }
 
   public static isControl(): boolean {
